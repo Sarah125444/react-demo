@@ -581,4 +581,606 @@
 
 
 
-#### 
+#### 1.react基本语法
+
+##### vue 和 react 中key的作用
+
+- 如果vue中使用v-for循环 ， 或者在react中使用map来循环的时候，如果需要保持状态（比如这项被选中或者怎么样），最好提供了一个key, 不然状态会紊乱 , 还有就是vue中使用动画的时候也必须加上key，所以为了统一，使用v-for的时候不管是什么状态都必须加key,所以react也需要加key
+- 注意： React中需要把key添加给 被forEach 或 map 或 for循环  直接控制的元素
+
+```js
+const arrStr = ['毛利兰', '柯蓝' , '小五郎', '灰原哀']
+
+{arrStr.map(item =>  <div  key={item}><h1>{item}</h1></div>)}
+
+
+# 需要注意的是 如果不加key 会报如下错误：
+
+react.development.js:175 Warning: Each child in a list should have a unique "key" prop.
+# 意思是需要给div这个父元素加一个独特的key用来辨识
+Check the top-level render call using <div>. See https://fb.me/react-warning-keys for more information. in div
+```
+
+##### jsx里面怎么写注释
+
+```
+{/* {arr} */} # 推荐使用这个注释 只用占据一行
+
+{
+  //这是注释，你看不见我   #这种方法的注释占据的行数太多不推荐
+}
+```
+
+##### jsx的其他注意事项
+
+- 在JSX创建DOM的时候，所有的节点，必须使用唯一的根元素进行包裹
+
+- 在JSX语法中，标签必须成对出现，如果是单标签，则必须自闭和
+
+- 特别需要注意的是**为jsx中的元素添加类名**需要使用`className`,否则会报这个错
+
+  ```js
+  <p class="myele">测试元素内部的属性</p>
+  
+  # 报错的意思是非法的DOM属性class，你的意思是className？
+  react-dom.development.js:558 Warning: Invalid DOM property `class`. Did you mean `className`?
+      in p
+      in div
+  
+  # 所以我们为了防止这个错误，应该手动将 class 手写成 className 就不会报错了
+   <p className="myele">测试元素内部的属性</p>
+  ```
+
+- 同样的**label里面的for属性**也是这个情况
+
+  ```js
+  <label for="ooo"></label>
+  # 如果像上面这样写，那么就会👇的报错
+  react-dom.development.js:558 Warning: Invalid DOM property `for`. Did you mean `htmlFor`?
+      in label
+      in div
+  
+  # 为了防止这个错误，我们应该将for 手写成 htmlFor 属性 就不会报错了
+   <label htmlFor="ooo"></label>
+  ```
+
+  
+
+#### 2.react创建组件的方式一（构造函数）
+
+##### 使用构造函数
+
+- 构造函数里面必须要向外return一个合法的JSX创建的虚拟DOM
+- 如果要接收外界传递的数据，需要在构造函数的参数列表中使用props来接收
+- 基本的创建方法
+
+```jsx
+function Hello (){}  #使用构造函数创建一个组件
+
+ReactDOM.render( 
+  <div>
+    <Hello></Hello>  # 直接将组价的名称以标签的形式放入到这里就可以
+  </div> , 
+  document.getElementById('app')
+)
+
+```
+
+- 构造函数的注意事项
+
+```jsx
+function Hello (){
+  return <div>这是一个div组件</div>  # 构造函数里面必须返回一个合法的JSX虚拟的DOM元素
+}  
+```
+
+#### 3.给组件传递数据的方式
+
+##### 直接将对象的属性传值 
+
+```jsx
+function Hello (){
+  return <div>这是一个div组件</div>
+}   
+
+const dog = {  # 可以直接将这个对象的属性传值给下面的标签里面   
+  name: '大黄'，
+  age: '10',
+  gender: '雄性'
+}
+
+ReactDOM.render( 
+  <div>
+    # 这是直接将对象里面的属性传值给这个组件里面
+    <Hello name={ dog.name }  age={ dog.age }  gender={ dog.gender }></Hello> 
+    # 如果想传递全部的dog对象，那么使用展开运算符也可以全部展开这个对象
+    <Hello {...dog}></Hello>
+  </div> ,  
+  document.getElementById('app')
+)
+```
+
+
+
+##### 通过构造函数的形参传值
+
+```jsx
+function Hello ( props ){ # 通过props传值
+	console.log(props) #console.log出一个对象 说明props是个对象 
+  return <div>这是一个div组件 -- {props.name} -- {props.age} -- {props.gender}</div>
+}   
+
+const dog = {  # 将这个对象直接传给构造函数
+  name: '大黄'，
+  age: '10',
+  gender: '雄性'
+}
+
+ReactDOM.render( 
+  <div>
+    //使用组件为组件传递 props数据
+    <Hello name={ dog.name } age={dog.age} gender={dog.gender}></Hello>   
+    
+  </div> ,  
+  document.getElementById('app')
+)
+
+```
+
+- 总结:组件接受外界传值：
+
+  - 怎么传值：直接使用使用传值
+
+  - 怎么使用：先用`props`形参接收，然后直接就可以点出来了
+
+    ```jsx
+    function Hello ( props ){  
+    props.name = 'zs'  #如果在这里更改对象的属性会报错
+    console.log(props) 
+    return <div>这是一个div组件 -- {props.name} -- {props.age} -- {props.gender}</div>
+    }  
+    ```
+
+  # 报错信息如下：
+
+  Uncaught TypeError: Cannot assign to read only property 'name' of object '#<Object>'
+  未捕获的类型错误:无法分配对象'#<对象>'的只读属性'name'
+  react-dom.development.js:21704 The above error occurred in the <Hello> component:
+      in Hello
+      in div
+  上述错误发生在组件:在Hello在div
+
+  # 根据报错信息可以知道  props 是只读的 ， 在vue中的props是用数组接收的 也是只读的
+
+  # 结论：不论是vue还是react,组件中的 props 永远都是只读的，不能被重新赋值
+
+  ```
+  
+  ```
+
+- 如果将构造函数的首字母小写会怎样？
+
+  ```jsx
+  function hello(props){  #如果将构造函数的首字母小写那么会报错
+     return <div>这是Hello组件</div>
+  }
+  ReactDOM.render( 
+  <div>
+    <hello></hello>
+  </div>, 
+  document.getElementById('app')
+  )
+  
+  # 报错信息：
+  react-dom.development.js:558 Warning: The tag <hello> is unrecognized(不被认可的) in this browser. If you meant to render a React component, start its name with an uppercase letter.
+      in hello
+      in div
+  
+  # 不管是在React 还是 Vue， 组件的首字母都是大写的
+  ```
+
+#### 4.将组件抽离为单独的文件
+
+##### 处理报错
+
+- 在`src`中创建`components`组件文件夹，在这个文件夹下创建各种单个组件文件，只是将创建的组件放入到这个文件中
+
+  ```jsx
+  # components 创建的 Hello.js 文件
+  
+  //使用es6暴露组件的方式将 Hello 组件暴露出去
+  export default function Hello(props){
+    return <div>这是Hello组件 -- {props.name} -- {props.age} -- {props.gender}</div>
+  }
+  
+  # 在index.js文件中接收
+  import Hello from './components/Hello' 
+  ```
+
+- 经过上面两步之后出现报错：`Hello.js:4 Uncaught ReferenceError: React is not defined`,意思是没有发现React
+
+  ```js
+  分析：
+  在components 创建的 Hello.js文件 我们只是放入了一个 构造函数创建的组件 
+  但是我们创建的React组件是必须依赖 react的包 但是在 新创建的组件文件中 我们并没有导入react的包
+  
+  # 所以必须在单独的组件文件夹里面导入react文件
+  import React from 'react'
+  ```
+
+##### 配置webpack中@为项目根目录
+
+- 在index.js文件中导入组件的时候，`import Hello from './components/Hello'`，其中的`.`可以变成`@` ，但是需要配置，配置方法是 打开`webpack.config.js`文件，将`module`折叠起来，在下面加一个`alias`，写下如下的代码：
+
+  ```js
+  resolve: {
+      alias: {   => alias 别名
+        '@': path.join(__dirname, './src') //这样设置之后，@就表示项目根目录中src的这一层目录
+      }
+    }
+  ```
+
+- 然后就可以在项目中使用@符号来表示根目录了
+
+  ```js
+  // 注意：这里的@符号，表示项目根目录中的src的这一层目录
+  import Hello from '@/components/Hello'
+  ```
+
+  
+
+#### 5.react创建组件的方式二（class关键字）：
+
+##### class的基本用法
+
+- 定义一个类的方法可以通过构造函数的方式
+
+  ```js
+  function Person (){}
+  let p1 = new Person() //Person{}
+  ```
+
+  
+
+- 同样，在es6里面可以通过class定义一个类
+
+  ```js
+  class Animal {}
+  let a1 = new Animal() //Animal
+  ```
+
+##### class的构造器使用方法
+
+- 给构造函数传值，并且打开控制台仔细观察会发现下面的信息：
+
+  ```js
+  function Person (name, age){
+    this.name = name
+    this.age = age
+  }
+  const p1 = new Person('王多多' , '18')  
+  console.log(p1)
+  
+  # 上面的信息在控制台打出来的信息如下：
+  
+  Person {name: "王多多", age: "18"}
+          age: "18"
+          name: "王多多"
+          __proto__:  // 点击打开这个—__proto__里面就会出现constructor
+          constructor: ƒ Person(name, age)  //可以发现这个构造器里面是之前写的构造函数
+          __proto__: Object  
+            constructor(){}
+  
+  # 通过上面的信息可以得出两个结论:
+  1. 构造函数里面有个构造器
+  2. 构造器里面是之前写的构造函数
+  ```
+
+- 那么使用class呢？
+
+  ```js
+  class Animal {
+    constructor(name. age){  //通过上面构造函数里面打印出来的信息可以知道这个里面保存的是构造函数
+      this.name = name  		//所以可以使用这个显式的给构造器传值 
+      this.age = age   
+    }
+  }
+  let a1 = new Animal('大黄', 13)  
+  console.log(a1) 
+  // 会发现在信息里面没有constructor的信息，但是在下划线原型里面有
+  // 也就是说只要是 类，里面必然存在构造器， 只是构造器没有被人为指定的时候隐藏了
+  
+  # 需要注意的是:每当 new 的时候，都会优先执行构造器里面的构造函数
+  ```
+
+  
+
+##### 实例属性和静态属性
+
+- 经过上面的分析可以知道：每次 new 的时候，都会优先执行构造器里面的构造函数，所以通过给`class `显式的指定一个构造器，会把隐藏的构造器覆盖。
+
+- new 一个实例，传值给构造器，这个构造器里面的 this 的属性就叫做实例属性；同样，在构造函数中，this的属性也是实例属性
+
+  ```js
+  function Person(name, age){
+    this.name = name,
+    this.age = age
+  }
+  const p1 = new Person('王多多' , '18')  
+  
+  console.log(p1.name)  //通过new出来的实例，访问到的属性，叫做【实例属性】
+  console.log(p1.age)
+  
+  ---------------------------------------华丽的分割线-------------------------------------
+  class Animal{
+     constructor(name, age){
+      this.name = name  //  在构造器里面通过this分配的属性也叫【实例属性】
+      this.age = age
+   }
+  } 
+  const a1 = new Animal('大黄', 13)    
+  console.log(a1.name)
+  console.log(a1.age)
+  ```
+
+  
+
+- 通过上面的代码演示已经知道了什么叫做实例属性了，那么什么是静态属性
+
+  ```js
+  function Person(name, age){
+    this.name = name,
+    this.age = age
+  }
+  Person.info = "这是Person构造函数自己身上的属性"
+  const p1 = new Person('王多多' , '18')  
+  console.log(p1.info) //通过p来访问info属性会发现是undefined
+  console.log(Person.info) //只能通过构造函数来访问这个属性 这个属性就叫做静态属性
+  
+  --------------------------------------华丽的分割线-----------------------------------------
+  
+  class Animal{
+   constructor(name, age){ #class下函数的方式
+      this.name = name  //  在构造器里面通过this分配的属性也叫【实例属性】
+      this.age = age
+   }
+    static info = "eeee"  //在class里面通过 static 这个来写静态属性
+  } 
+  const a1 = new Animal('大黄', 13)  
+  console.log(a1.info)  //undefined 实例点出来的属性是不能访问到的
+  console.log(Animal.info)  //info是Animal的静态属性 只能通过构造函数本身访问
+  
+  # 总结：静态属性就是构造函数自己身上的属性，只能通过构造函数来访问
+  ```
+
+  
+
+##### 实例方法和静态方法
+
+- 构造函数-创建实例方法
+
+  ```js
+  分析：给构造函数创建一个方法应该创建在哪儿？
+  1. 创建在构造函数里面 和 this属性放在一起，只要实例一创建，方法也会被创建
+  2. 创建在原型对象上，实例需要使用的时候再调用
+  # 答案是：创建在原型对象上。因为如果创建在构造函数里面，那么只要实例一创建就会有，那么不管是这个实例需要不需要，这个方法都在那里占据着内存，假如1000个实例同时被创建，有999个都不需要这个方法，那么这个999个方法就是多余的，占据着多余的内存
+  ```
+
+  ```js
+  function Person(name, age){
+    this.name = name,
+    this.age = age
+  }
+  Person.info = 'aaaa' 
+  
+  Person.prototype.say = function(){   //这个say是挂载到这个原型对象上的
+    console.log('这是一个Person的实例方法')
+  }
+   
+  const p1 = new Person('王多多' , '18')  
+  console.log(p1) 
+  # 打印出的信息：
+  //直接将这个实例对象p1打印出来，将对象点击打开会出现下面的信息：
+  Person {name: "王多多", age: "18"}
+  age: "18"
+  name: "王多多"
+  __proto__:
+       say: ƒ ()   #  说明这个方法确实是挂载到原型对象上的
+       constructor: ƒ Person(name, age)
+       __proto__: Object
+  ```
+
+- Class 创建实例方法 - 既然构造函数能够创建实例方法，那么class这种也是可以创建实例方法的
+
+  ```js
+  class Animal{
+     constructor(name, age){
+      this.name = name
+      this.age = age
+     }
+   
+     static info = "eeee"
+    
+    //这是动物的实例方法 => 今后会经常用到实例方法
+     jiao (){  //  
+      console.log('动物的实例方法')
+     }
+   }
+  
+  const a1 = new Animal('大黄', 13)  
+  a1.jiao()  //实例方法
+  console.log(a1)
+  # 打印出来的信息：
+  Animal {name: "大黄", age: 13}
+  age: 13
+  name: "大黄"
+  __proto__:
+        constructor: ƒ Animal(name, age)
+        jiao: ƒ jiao()  =>答应出来的信息里面确实是在原型对象上出现了这个jiao方法
+        __proto__: Object
+        
+  # 总结：
+  # 1. class里面写实例方法就是写在和  constructor  static 平级的下面 
+  # 2. 通过这种方法定义的方法 是和 构造函数原型上定义的方法是一样的，也是在原型上     
+  ```
+
+- 构造函数的静态方法
+
+  ```js
+  function Person(name, age){
+    this.name = name,
+    this.age = age
+  }
+  Person.info = 'aaaa' 
+  Person.prototype.say = function(){  //这个say是挂载到这个原型对象上的
+    console.log('这是一个Person的实例方法')
+  }
+  # 静态方法
+  Person.show = function(){
+    console.log('这是Person的静态show方法')
+  }
+  
+  const p1 = new Person('王多多' , '18')  
+  p1.say()
+  // p1.show() //定义的静态方法 再 通过实例方法来访问就会报错
+  // 06-静态方法.js:30 Uncaught TypeError: p1.show is not a function 
+  Person.show()  //只能通过这个方法来访问实例对象的方法 这是一个Person的实例方法
+  
+  console.log(p1) 
+  // Person {name: "王多多", age: "18"}
+  // age: "18"
+  // name: "王多多"
+  // __proto__:
+        // say: ƒ ()
+        // constructor: ƒ Person(name, age)
+            // info: "aaaa"
+               show: ƒ () #这是通过构造函数来定义的方法 都挂载给了构造函数 并不在原型对象上
+            // arguments: (...)
+            // caller: (...)
+            // length: 2
+            // name: "Person"
+            // prototype: {say: ƒ, constructor: ƒ}
+            // __proto__: ƒ ()
+            // [[FunctionLocation]]: 06-静态方法.js:12
+            // [[Scopes]]: Scopes[3]
+         // __proto__: Object
+  ```
+
+- class的静态方法
+
+  ```js
+  class Animal{
+     constructor(name, age){
+      this.name = name
+      this.age = age
+     }
+     static info = "eeee"  //静态属性今后用的不多
+  
+     jiao (){  
+      console.log('动物的实例方法')
+     }
+  
+    #不管是静态方法还是静态属性 只要前面写上 static 那么就可以变成静态
+     static show(){   //这种静态方法今后用的不多
+      console.log('这是Animal的静态 show 方法')
+    }
+   }
+  
+  const a1 = new Animal('大黄', 13)  
+  
+  a1.jiao()
+  Animal.show()   //静态方法
+  console.log(a1)
+  
+  // Animal {name: "大黄", age: 13}
+  // age: 13
+  // name: "大黄"
+  // __proto__:
+  //       constructor: ƒ Animal(name, age)
+  //           info: "eeee"
+  //           arguments: (...)
+  //           caller: (...)
+  //           length: 2
+  //           name: "Animal"
+  //           prototype: {constructor: ƒ, jiao: ƒ}
+               show: ƒ show()  #静态方法 并不在原型对象上 而是在构造器里面的构造函数里面
+  //           __proto__: ƒ ()
+  //           [[FunctionLocation]]: 06-静态方法.js:54
+  //           [[Scopes]]: Scopes[4]
+  //       jiao: ƒ jiao()
+  //       __proto__: Object
+  ```
+
+- 需要注意的是`class`{ }内部是只能写`constructor` ,`静态属性`/`静态方法`  , `实例属性/实例方法` 其他是不能写的
+
+- class内部还是用原来的配方实现的，就是普通的构造函数，所以我们把class关键字，称做语法糖
+
+##### class基本使用方法总结：
+
+- 每个class的内部都有一个构造器`constructor`
+- 在new这个class的时候是第一时间去执行构造器里面的内容
+- 通过new之后传递的参数，都通过构造器的形参列表进行接收，内部也是使用this来进行分配的
+
+##### class实现继承的方法
+
+- 属性继承
+
+```js
+//定义一个美国人
+class American {
+ constructor(name, age){
+    this.name = name
+    this.age = age
+  }
+}
+const a1 = new American('Jack', 20)
+console.log(a1)
+
+
+// 定义一个中国人
+class Chinese{
+  constructor(name, age){
+    this.name = name
+    this.age = age
+  }
+}
+const c1 = new Chinese('张三', 111)
+console.log(c1)
+
+# 上面是定义了两个国家的人 ，如果要定义全球的人 是不是要定义100个类？
+```
+
+```js
+观察上面两个类发现，其中的构造器里面的内容是一样，是不是有个方法可以将构造器的内容写到一起，然后别的国家直接使用这个方法就好了？
+# class里面定义了 继承 的概念，可以将一些相同的内容抽离出来，写到一个共同的方法里面，然后其他类引用就好了
+改造上面的代码？
+
+//这是父类  大家可以直接把父类 理解成原型对象
+class Person {  //将几个类里面一样的内容抽离出来一个单独的内容
+  constructor(name, age){
+    this.name = name
+    this.age = age
+  }
+}
+
+// 这是子类 美国人
+// 在class类中，可以使用extends 关键字，实现子类继承父类
+// 语法：class  子类 extends（继承） 父类 
+class American extends Person{  # 这里要想使用上面的方法，就是在后面加上 继承关键字 和 要继承的名字
+  
+}
+const a1 = new American('Jack', 20)
+console.log(a1)
+
+
+// 这是子类中国人
+class Chinese extends Person {
+  
+}
+const c1 = new Chinese('张三', 111)
+console.log(c1)
+
+# 通过在类 后面加上 extends 关键字 和 父类的名字 实现继承， 这样相同的部分就不用再重复写了
+```
+
+- 方法继承： 和属性继承一样
