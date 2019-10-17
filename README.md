@@ -1184,3 +1184,302 @@ console.log(c1)
 ```
 
 - 方法继承： 和属性继承一样
+##### 构造器中的super方法
+
+```js
+class Person {
+  constructor(name, age){
+    this.name = name
+    this.age = age
+  }
+  sayHello(){
+    console.log('大家好')
+  }
+}
+
+class American extends Person{
+  constructor(){  //在子类使用extends关键字继承父类的时候，如果在这里写一个构造器，报错显示需要一个super()函数，那么这个sper函数是什么？
+    
+    super()
+  }
+}
+const a1 = new American('Jack', 20) 
+console.log(a1)
+```
+
+- 什么是super?
+  - **语法层面的规定**：如果一个子类通过`extends`关键字继承父类的属性和方法的时候，必须在构造器里面优先调用`super()`方法
+
+- super()是个什么东西
+  - 通过super()的写法，猜测super是个函数，经过测试发现super确实是个函数
+  - 不过不仅只是个函数，还是**父类的构造器**的一个指引
+
+- 为什么调用了super()之后.a1实例的name和age都变成undefined构造器中的一个引用？
+  - 之前说过，只要`new`一个类，那么就必然优先去执行这个类的构造器，而这个构造器里面没有传入参数列表进行接收，那么就是`name=undefined`,age=undefined, 这两个又传`super`，supe函数是父类的构造器，super函数里面也没有传入参数列表进行接收，自然也是两个undefiend.
+  - 所以j解决这个问题的办法是给constructor 和super 都手动传入参数列表进行接收
+
+- 为什么没有给子类加constructor这些东西之前就不报错，加了之后反而还报错？
+  - 还是之前说过的，只要`new`一个类，会优先去执行这个类的构造器
+  - 之前还说过，每个类都有一个隐藏的`constructor`，但是一旦手动添加了`constructor`，那么这个`constructor`会自动覆盖隐藏的`constructor`
+  - 手动添加了`constructor`,参数列表不传，父类的构造器`super()`函数不传，相当于这是放了一个空箱子在这里占位置，但是里面没有零件，自然启动之后就会出现各种报错。
+  - 所以只要是子类继承父类，手动添加`constructor`,一定要添加super()函数，并且一定要记得传参接收
+
+- 什么情况会使用`super()`?
+  - 只要使用extends关键字实现继承，一定要记得在子类构造器里面加上`super()`，并且传递参数
+
+##### 为子类挂载独有的属性
+
+- 并不是所有的子类都是一样的，比如美国人就没有中国人的身份证，那么这个时候想要给中国人一个属性，怎么添加？
+
+  ```js
+  class Person { 
+    constructor(name, age){   //所有子类都共享的东西适合放在父类  
+      this.name = name
+      this.age = age 
+    }
+    sayHello(){
+      console.log('大家好')
+    }
+  }
+  class Chinese extends Person {
+    constructor(name,age,IDNumber){ # IDNumber是中国人独有的，不能放在父类，只能放在子类自己的构造器里面
+      super(name,age,IDNumber)  
+      this.IDNumber = IDNumber  # 在子类中，this 只能放到super之后使用
+    }
+  }
+  const c1 = new Chinese('张三', 111 ,513701996)
+  console.log(c1)
+  ```
+
+- 总结：
+
+  - 需要共享的属性都适合放在父类的构造器，需要共享的函数放在父类的函数里面
+  - 不需要共享的就放在自己的类的构造器里面，传值给构造器进行接收就可以了
+  - **特别需要注意的是：通过this分配属性的时候，这个this不能放在super函数前面，不然会报错**
+  - 也就说，constructor里面执行的第一行代码必须是super函数
+
+##### 
+
+#### 6.创建组件的方式二（class）
+
+##### 最基本的组件结构
+
+```jsx
+class 组件名称 extends React.Component { 
+  render(){
+    return <div>这是class创建的组件</div>
+  }
+}
+
+#总结：
+1.如果要使用 class 定义的组件，必须让自己的组件继承自父类的组件
+2.React.Component是一个类 当我们自己的类继承了React.Component的类，那么自己的类就有父类的一些特				征，因为子类继承父类，所以父类上的东西子类上也有
+3.在组件内部，必须有render函数，render函数的作用是渲染当前组件所对应的虚拟DOM元素
+4.render函数中，必须返回合法的JSX虚拟DOM结构 
+```
+
+##### 基本骨架
+
+```jsx
+class Movie extends React.Component {
+  render(){
+   return <div>这是class创建的组件 - </div>
+  }
+}
+
+ReactDOM.render(
+  <div> #根容器 
+     <Movie></Movie> 将创建的组纪以标签形式放到这里  
+  </div>,
+  document.getElementById('app')
+)
+
+```
+
+##### 为class创建的组件传递props参数
+
+```jsx
+class Movie extends React.Component{
+  render(){  //实例方法
+    // 在class 关键字创建的组件中，如果想使用外界传递过来的props参数，不需要接收，
+    // 直接通过this.props.***接收即可
+    return <div>
+      {/* 注意：在class组件内部，this表示当前组件的实例对象 */}
+      这是Movie组件 - {this.props.name} - {this.props.age} - {this.props.gender}
+    </div>
+  }
+}
+
+const user = {
+  name: 'zs',
+  age: 22,
+  gender: '男'
+}
+
+ReactDOM.render(
+  <div>
+      {/* 这里的movie标签，其实就是movie类的一个实例对象 */}
+      <Movie {...user}></Movie>
+  </div>,
+  document.getElementById('app')
+)
+```
+
+##### class组件中的props是只读的
+
+- 之前使用function创建的组件里面的props是`read-only`,但是class里面的组件是没有这个read-only这个标签的，那么是不是说明使用class关键字创建的组件的props是可读可写的？？
+
+  ```jsx
+  class Movie extends React.Component{
+    render(){  
+      this.props.name = '李四' 
+      
+  # 加完这句话之后句报错：
+  # Uncaught TypeError: Cannot assign(分配) to read only property 'name' of object '#<Object>'
+  #意思是props属性是只读属性，不能更改写入
+  
+      return <div>
+        这是Movie组件 - {this.props.name} - {this.props.age} - {this.props.gender}
+      </div>
+    }
+  }
+  
+  #结论：
+  不管是function还是class创建的组件props，都是read only
+  ```
+
+  
+
+#### 7.两种创建组件方式的对比
+
+```jsx
+function Hello (props){
+  return <div>这是function创建的组件 - {props.name} - {props.age} - {props.gender}</div>
+}
+
+class Movie ectends React.Component{
+  render(){
+    return <div>这是class创建的组件 - {props.name} - {props.age} - {props.gender} </div>
+  }
+}
+```
+
+##### 相同点
+
+- Function 和 class 创建的组件都能以 **标签的形式** 被丢到页面上显示
+- Funciton 和 calss 创建的组件都能直接给传参，传过来的参数也能被访问
+  - Function 直接是使用 `props` 接收
+  - Class 是使用 `this.props`接收
+
+> 如果两个创建组件的特征一样，为啥还要设计两个创建组件的方式？
+
+既然创建两个，肯定有区别，那么区别是哪些？
+
+
+
+##### 不同点
+
+==概念问题：使用class关键字创建的组件，有自己的私有数据和生命周期函数；但是使用function创建的组件，只有props，没有自己的私有数据和生命周期函数==
+
+- 对比vue中，每个组件都有自己的私有数据（data方法），有自己的生命周期函数，像before / creact / created / mounted ， 在React中使用`class`创建的组件也有自己的私有数据和生命周期函数，但是如果是使用function创建的组件是没有这些的
+
+
+
+#### 8.class创建的组件的私有数据
+
+##### this.state只能写在class组件里面
+
+```js
+class Movie extends React.Component{
+  constructor(){
+    super() 
+    this.state = {   
+      msg: '大家好，我是class创建的Movie组件'
+    }  
+  }
+
+  render(){   
+    return <div>
+      这是Movie组件---{this.props.name}---{this.props.age}--{this.props.gender}
+      <h3>{this.state.msg}</h3>  # 只能放到class里面
+    </div>
+  }
+}
+
+const user = {name: 'zs',age: 22,gender: '男'}
+ 
+ReactDOM.render(
+  <div>
+       <Movie {...user}></Movie>
+       <h3>{this.state.msg}</h3>  # 在这里调用这个会报错： index.js:57 Uncaught TypeError: Cannot read property 'state' of undefined
+  </div>,
+  document.getElementById('app')
+)
+```
+
+##### this.state数据是可读可写的
+
+```jsx
+class Movie extends React.Component{
+  constructor(){
+    super()  
+    this.state = {  //这个this.state = {}就约等于 Vue中的 data(){ return {}}
+      msg: '大家好，我是class创建的Movie组件'
+    }  
+
+    // 这个state是只读只写的吗？ =>可读可写的
+    // 因为这个this.state是react里面的东西 相当于vue中的data 
+    // 在vue中的data中那些数据是可读可写的
+    // 既然相当于，那么this.state中的数据也是可读可写的
+  }
+
+  render(){   
+    // this.state.msg = 'msg的值被我修改了' 事实证明，state是可读可写的
+    return <div>
+      这是Movie组件---{this.props.name}---{this.props.age}--{this.props.gender}
+      <h3>{this.state.msg}</h3>  //只能放到class里面
+    </div>
+  }
+}
+
+const user = {name: 'zs',age: 22,gender: '男'}
+
+ReactDOM.render(
+  <div>
+       <Movie {...user}></Movie>
+  </div>,
+  document.getElementById('app')
+)
+```
+
+##### 两种状态组件
+
+- 因为构造函数没有`state`这个私有的数据，所以构造函数创建出来的组件，叫做"无状态组件"
+
+- 因为class 里面有`state`这个私有的数据，所以class创建的组件叫做"有状态组件"
+
+- 有状态组件和无状态组件之间的本质区别是：有无state属性 和 有无生命周期函数
+
+- 怎么区分使用哪种组件？
+
+  - 如果一个组件需要自己的私有数据，则推荐使用：class创建的有状态组件
+
+  - 如果一个组件不需要私有的数据，则推荐使用：无状态组件
+
+  - React官方说：无状态组件，由于没有自己的state和生命周期函数，所以运行效率会比有状态组件稍微高一些
+
+    
+
+##### props和state/data中的区别
+
+- 数据来源
+
+  - props中的数据都是外界传递过来的；
+
+  - state/data中的数据，都是组件私有的；（通过AJax获取回来的数据，一般都是私有数据）
+
+    
+
+- 数据特性
+  - props中的数据都是只读的，不能重新赋值；
+  - state/data中的数据都是可读可写的
