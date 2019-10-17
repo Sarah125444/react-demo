@@ -1472,6 +1472,8 @@ ReactDOM.render(
 
 ##### props和state/data中的区别
 
+##### props和state/data中的区别
+
 - 数据来源
 
   - props中的数据都是外界传递过来的；
@@ -1481,5 +1483,194 @@ ReactDOM.render(
     
 
 - 数据特性
+
   - props中的数据都是只读的，不能重新赋值；
   - state/data中的数据都是可读可写的
+
+#### 9.将index.js的文件中的组件抽离出去
+
+```jsx
+import React from 'react'
+import ReactDOM from 'react-dom'
+
+function CmtItem(props){  #function定义的无状态组件
+  return  <div >
+      <h1>评论人： {props.user}</h1>
+      <p>评论内容： {props.content}</p>
+  </div>
+}
+
+class Cmtlist extends React.Component{ #class定义的有状态组件
+  constructor(){
+    super()
+    this.state = { #有this.state表示有状态
+      CommentList: [ //评论列表数据
+        {id: 1, user: '张三', content: '哈哈，沙发'},
+        {id: 2, user: '李四', content: '哈哈，沙发'},
+        {id: 3, user: '王五', content: '哈哈，沙发'},
+        {id: 4, user: '赵六', content: '哈哈，沙发'},
+        {id: 5, user: '田七', content: '哈哈，沙发'},
+      ]
+    }
+  }
+  render(){
+    return  <div>
+    <h1>这是评论列表内部</h1>
+    {this.state.CommentList.map(item => <CmtItem {...item} key={item.id}></CmtItem> )}
+  </div>
+  }
+}
+
+ReactDOM.render(
+  <div>
+     <Cmtlist></Cmtlist>
+        
+  </div>,
+  document.getElementById('app')
+)
+```
+
+##### 在src文件夹下建立单独的组件文件夹
+
+- 将上面的`function`组件 和 `class`组件抽离为两个单独的组件
+  - 在`src` 文件夹下面新建`components`文件夹。这个文件夹是专门用来放各种单独的文件夹的
+  - 新建`CmtList.js`文件
+  - 新建`CmtItem.js`文件
+
+- 开始分离组件-CmtItem.js文件内容 - 
+
+  - 将组件内容复制到这个文件夹中,因为组件有单独的作用域，所以要使用export default导出这个模块
+
+  ```js
+  export default function CmtItem(props){  # 第一步：将组件内容复制到这个文件夹中
+    return  <div >
+        <h1>评论人： {props.user}</h1>
+        <p>评论内容： {props.content}</p>
+    </div>
+  }
+  ```
+
+  - 因为单独组件中也要使用react,所以也要导入react
+
+  ```js
+  import React from 'react' #第二步：导入这个包
+  ```
+
+  - 这个单独的组件就分离出去了
+
+
+
+- 开始分离组件-CmtList.js文件内容
+
+  - 将组件内容复制到这个文件夹中,使用模块导出语法将这个模块导出
+
+    ```jsx 
+    export default class Cmtlist extends React.Component{
+      constructor(){
+        super()
+        this.state = {
+          CommentList: [ //评论列表数据
+            {id: 1, user: '张三', content: '哈哈，沙发'},
+            {id: 2, user: '李四', content: '哈哈，沙发'},
+            {id: 3, user: '王五', content: '哈哈，沙发'},
+            {id: 4, user: '赵六', content: '哈哈，沙发'},
+            {id: 5, user: '田七', content: '哈哈，沙发'},
+          ]
+        }
+      }
+      render(){
+        return  <div>
+        <h1>这是评论列表内部</h1>
+       {this.state.CommentList.map(item => <CmtItem {...item} key={item.id}></CmtItem> )}
+      </div>
+      }
+    }
+    ```
+
+  - 第二步是导入react包
+
+    ```js
+    import React from 'react'
+    ```
+
+  - 因为这个组件是引入了评论的组件，所以要将评论的组件导入到这个组件
+
+    ```js
+    import CmtItem from '@/components/CmtItem'
+    ```
+
+##### 导入文件的路径 - @  
+
+- 如果要抽离组件了，之前是在A文件中，挪动到B文件，从B文件挪到C文件，然后这个路径就会跟着挪来挪去
+
+- 如果是使用`./`这种方式来写路径，那么需要一直改路径
+
+- 之前在`webpack.config.js`中设置过的一个路径设置：
+
+```js
+alias: {
+      '@': path.join(__dirname, './src')
+    }
+```
+
+- 在路径中以`@`符号来设置路径，这个@已经被处理成一个绝对路径了。因为是从C盘或者D盘的盘符来算起。然后就可以在组件的任何文件里面使用`'@/components/+文件名`，因为是个绝对路径。
+
+#### 10.在jsx中使用行内样式
+
+- 行内样式的语法
+
+```jsx
+ render(){
+    return  <div> 
+    <h1 style="color:red;">这是评论列表内部</h1>  #在使用style="color:red;"这个行内样式的时候会报错
+    {this.state.CommentList.map(item => <CmtItem {...item} key={item.id}></CmtItem> )}
+  </div>
+  }
+
+# 报错信息如下：
+未捕获    不变量的    冲突 
+Uncaught Invariant Violation: The `style` prop expects a mapping from style properties to values, not a string. For example, style={{marginRight: spacing + 'em'}} when using JSX.
+
+# 注意：
+在JSX中，如果想写行内样式，不能为 style 设置字符串的值
+应该这样写： style={{ color: 'red' }}
+
+```
+
+- 样式属性的写法注意事项
+
+  - 类似`font-size`这样有连字符的属性，那么就是将连字符去掉，然后将第二个单词首字母大写
+
+    ```js
+    render(){
+     return  <div> 
+       <h1 style="color:red; font-size: '25px'">这是评论列表内部</h1>  #出现报错信息
+       {this.state.CommentList.map(item => <CmtItem {...item} key={item.id}>       </CmtItem> )}
+             </div>
+    }
+    
+    # 报错信息： 
+    Warning: Unsupported style property font-size. Did you mean fontSize?
+    意思是有连字符的属性最少第二个单词首字母大写
+    ```
+
+    
+
+  - 如果写行类样式的时候不加双引号，那么就会报错
+
+  - 写属性的时候，如果属性的值是带有字母的，那么就必须给属性值加单引号，如果属性值是纯数字的，那么就不必加单引号
+
+    ```js
+    render(){
+     return  <div> 
+       <h1 style="color:red,zIndex:3,textAlign:'center'">这是评论列表内部</h1>  #出现报错信息
+       {this.state.CommentList.map(item => <CmtItem {...item} key={item.id}>       </CmtItem> )}
+             </div>
+    }
+    
+    # 报错信息：
+    Uncaught ReferenceError: red is not defined
+    总结：行内样式中，如果是数值类型的样式，则可以不用引号包裹，如果是字符串类型的样式值，必须使用引号包裹
+    ```
+
+    
