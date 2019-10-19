@@ -1672,5 +1672,366 @@ Uncaught Invariant Violation: The `style` prop expects a mapping from style prop
     Uncaught ReferenceError: red is not defined
     总结：行内样式中，如果是数值类型的样式，则可以不用引号包裹，如果是字符串类型的样式值，必须使用引号包裹
     ```
+#### 11.分离行内样式
 
+- 第一种是自己将行内样式写在标签里面
+
+  ```js
+  export default function CmtItem(props){
+    return  <div style={// const itemStyle = {border: '1px dashed #ccc',margin: '10px',padding: '10px',boxShadow: '0 0 10px #ccc'}}>
+        <h1 style={{fontSize: '14px'}}>评论人： {props.user}</h1>
+        <p style={{fontSize: '12px'}}>评论内容： {props.content}</p>
+    </div>
+  }
+  
+  # 这个将行内样式写在标签里面，导致每行标签的特别大
+  ```
+
+- 第二种是将每个行内样式都抽出来一个单独的变量，然后将变量放在jsx表达式里面
+
+  ```js
+  const itemStyle = {border: '1px dashed #ccc',margin: '10px',padding: '10px',boxShadow: '0 0 10px #ccc'}
+  const userStyle = {fontSize: '14px'}
+  const contentStyle = {fontSize: '12px'}
+  
+  
+  export default function CmtItem(props){
+    return  <div style={itemStyle}>
+        <h1 style={userStyle}>评论人： {props.user}</h1>
+        <p style={contentStyle}>评论内容： {props.content}</p>
+    </div>
+  }
+  ```
+
+  
+
+- 第三种是将每个行内样式批处理，放在一个对象里面，然后使用点的方式将对象的每个数据点出来
+
+  ```js
+  const styles = {
+      item: {border: '1px dashed #ccc',margin: '10px',padding: '10px',boxShadow: '0 0 10px    #ccc'},
+      user: {fontSize: '14px'},
+      content: {fontSize: '12px'}
+  }
+  
+  export default function CmtItem(props){
+    return  <div style={styles.item}>
+        <h1 style={styles.user}>评论人： {props.user}</h1>
+        <p style={styles.content}>评论内容： {props.content}</p>
+    </div>
+  }
+  ```
+
+  
+
+- 第四种是抽离为单独的模块文件，建立一个名字为`style.js`文件
+
+  ```js
+  export default {
+    item: {border: '1px dashed #ccc',margin: '10px',padding: '10px',boxShadow: '0 0 10px #ccc'},
+    user: {fontSize: '14px'},
+    content: {fontSize: '12px'}
+  }
+  ```
+
+- 第五种抽离为单独的`css`组件=> 在`components文件夹下，新建一个文件`cmtlist.css`,然后在里面写入样式，最后将这个文件导入到需要这个样式的组件文件中。
+
+  
+
+##### webpack配置解析.css文件
+
+- 安装解析.css文件的安装包
+
+  ```js
+   npm i style-loader css-loader -D
+  ```
+
+- 打开`webpack.config.js`文件，在webpack官网找到`style-loader`的配置文件，然后将配置文件复制到这个文件里面
+
+  ```js
+  {
+    test: /\.css$/,
+    use: [{ loader: 'style-loader' }, { loader: 'css-loader' }],
+   }
+   resolve: {
+      extensions: ['.js','.jsx','.json','.vue'],  
+  ```
+
+- 因为新配置过的文件要重新启动才生效，所以这里需要重启服务才行
+
+- webpack解析.css文件的过程：
+
+  - 第一步：webpack在执行到`import cssobj from '@/css/cmtlist'   `这句代码的时候，会发现这句代码执行不了
+  - 第二步：在发现自己解析不了这句代码的时候，那么就会去自己的配置文件`webpack.config.js`里面去找，然后就会找到我们配置的解析css后缀名的那句代码
+  - 第三步：按照从右往左的顺序，先使用`css-loader`来执行这个文件，然后`css-loader`将处理结果传递给`style-loader`， 等到`style-loader`将结果处理好之后，发现自己旁边没有处理器了，就会把结果交给webpack，webpack进行打包处理。
+
+  
+
+##### webpack启用css-modules
+
+```js
+import cssobj from '@/css/cmtTitle.css'
+console.log(cssobj) //{}
+
+分析：这里导入的css样式表 ，导出的是一个空对象，所以是没有作用域的，导致只要引入这个文件，这个文件的样式就会作用在文件上面
+要解决的问题: 将css样式表的作用域变成类似模板作用域一样的东西
+解决的办法：官方已经给了解决办法-启动css-modules
+```
+
+- 第一步：修改`webpack.config.js`这个配置文件，为css-loader添加参数`?modules`
+
+  ```js
+   // 可以在css-loader之后，通过？追加参数。其中。有个固定的参数，叫做modules,表示为 普通的css
+   use: [{ loader: 'style-loader' }, { loader: 'css-loader?modules' }], 
+  ```
+
+- 第二步：在需要的组件中，`import`导入样式，并接收模块化的css样式对象
+
+  ```js
+  import cssobj from '../css/CmtList.css'
+  ```
+
+- 第三步：在需要的HTML的标签上，通过`对象.属性`形式使用className指定模块化的样式
+
+  ```jsx
+  <h1 className={cssobj.title}>评论列表组件</h1>
+  ```
+
+#### 12.webpack设置自定义类名
+
+- 因为自动生成的类名是在太个性了，就像一堆乱码，我们都不知道那是啥，于是为我们提供了另外一对参数，可以自定义类名生成类名。
+
+- 自定义类名设置方法：
+
+  - 使用`localIdentName`自定义生成的类名格式，可选的参数为：
+
+  - 【path】表示样式表`相对于项目根目录`所在路径
+
+  - 【name】表示样式表文件名称
+
+  - 【local】表示样式的类名定义名称
+
+  - 【hash:length】表示32位的hash值
+
+  - 放入webpack.config.js的代码：
+
+    ```js
+          {
+            // For CSS modules
+            test: /\.css$/,
+            use: [
+              "style-loader",
+              {
+                loader: "css-loader",
+                options: {
+                  modules: true,
+                  modules: {
+                    localIdentName: "[path][name]-[local]-[hash:base64:5]"
+                  }
+                }
+              }
+            ]
+          },
+    ```
+
+    经过上面设置后打印出来的对象为：
+
+    ```js
+    Object
+    cmtTitle: "src-css-cmtlist-cmtTitle-2niaj"
+    test: "src-css-cmtlist-test-3KlWr"
+    title: "src-css-cmtlist-title-12gry"
+    ```
+
+    
+
+#### 13.使用:global和:local
+
+- `:local`包裹 的类名，是被模块化的类名，只能通过`className={cssobj.类名}`来使用，同时，`：local`默认可以不写，这样，默认在样式表中定义的类名，都是被模块化的类名
+- `:global`包裹的类名，是全局生效的，不会被`css-modules`控制，定义的类名是什么，就是使用定义的类名`className="类名"`
+
+#### 15.配置bootstrap和解析scss文件
+
+##### 安装`bootstrap@3.3.7` 
+
+- 导入文件里面
+
+```js
+npm install bootstrap@3.3.7 -s
+
+import bootcss from 'bootstrap/css/dist/bootstrap.css'
+
+<button className="btn btn-primary">按钮</button>
+# 使用上面bootstrap这种类名会报错：
+ 会显示无法解析.svg|eot|ttf|woff|woff2这类文件
+```
+
+- 解决无法解析文件后缀名的问题：
+
+  - 安装`url-loader`和`file-loader`
+
+    ```js
+    npm install url-loader file-loader -s
+    ```
+
+  - 然后在`webpack.config.js`文件中加入下面的代码
+
+  ```js
+  {
+    test: /\.(png|jpg|gif|svg|eot|ttf|woff|woff2)$/,
+    loader: "url-loader",
+    options: {
+       limit: 10000,
+          },
+   },
+  ```
+
+  
+
+- 解决完上面的问题之后会发现没有效果，然后将导入的`bootcss`打印出来会发现是个对象,需要将属性点出来使用
+
+  ```js
+  <button className={[bootcss.btn , bootcss['btn-primary']].join(' ')}>按钮</button> 
+  # 使用这种方式就不能直接使用bootstarp里面的类名了 还是希望能直接使用bootstrap里面的类名
+  ```
+
+  
+
+- 怎么样才能直接使用bootstrap里面的类名？
+
+  通过观察发现，打印出来`bootcss`的对象发现，里面的类名都被模块打包了，也就说之前是将`.css` 后缀名设置为通过模块打包。
+
+  现在我们导入的`bootstrap.css`的文件是不需要通过模块打包的，怎么样将这个文件隔离出去？
+
+  解决办法是将css样式表里面的文件都改为.scss结尾的文件，然后`bootstrap.css`这类似的文件还是用.css文件后缀名，但是这样就需要重新设置能够解析scss文件的loader.
+
+##### 安装解析scss文件的loader
+
+- 找到`webpack`设置scss文件的地方（英文版）：
+
+```js
+    # 安装配置文件
+    npm install sass-loader node-sass --save-dev
+
+```
+
+- 配置代码：
+
+  ```js
+  {
+          test: /\.s[ac]ss$/i,
+          use: [
+            // Creates `style` nodes from JS strings
+            "style-loader",
+            // Translates CSS into CommonJS
+            {
+              loader: "css-loader",
+              options: {
+                modules: {
+                  localIdentName: "[path][name]__[local]--[hash:base64:5]",
+                },
+              },
+            },
+            // Compiles Sass to CSS
+            "sass-loader",
+          ],
+        },
+  ```
+
+  
+
+##### 设置这样代码的原因
+
+- 之前解析.css后缀名的样式表是可能里面要写scss文件，所以设置为了如下代码：
+
+  ```js
+    {
+          // For CSS modules
+          test: /\.css$/,
+          use: [
+            "style-loader",
+            {
+              loader: "css-loader",
+              options: {
+                modules: true, #选择模块化
+                modules: {
+                  localIdentName: "[path][name]-[local]-[hash:base64:5]"
+                }
+              }
+            }
+          ]
+        },
+  ```
+
+  - 但是现在.css文件只是引入进来的下载好的文件包，不需要使用scss解析，也不需要模块化，所以需要将模块化的设置删掉，只留下包名就可以了，也就是代码设置改为如下：
+
+  ```js
+   {
+          test: /\.css$/,
+          use: ["style-loader", "css-loader"], #css-loader这里不需要模块化，需要全局引用
+        },
+  ```
+
+##### 配置解析.scss文件最终版
+
+```js
+ {
+        test: /\.s[ac]ss$/i,
+        use: [
+          // Creates `style` nodes from JS strings
+          "style-loader",
+          // Translates CSS into CommonJS
+          {
+            loader: "css-loader",
+            options: { #设置css模块化
+              modules: {
+                localIdentName: "[path][name]__[local]--[hash:base64:5]",
+              },
+            },
+          },
+          // Compiles Sass to CSS
+          "sass-loader",
+        ],
+  },
+```
+
+这样子设置好了之后就可以正常解析`bootstrap.css`文件和`.scss`文件
+
+##### 设置好之后的使用方法
+
+```js
+# 将之前后缀名为.css文件都重命名为.scss后缀名的文件再重新引入进来
+import cssobj from '@/scss/cmtlist.scss'
+ 
+# 由于bootstrap的包文件不需要模块化 而且也并没有导入对象 所以不需要import XX from 这种导出文件的方式
+import 'bootstrap/dist/css/bootstrap.css'
+
+export default class Cmtlist extends React.Component{
+  constructor(){
+    super()
+    this.state = {
+      CommentList: [  
+        {id: 1, user: '张三', content: '哈哈，沙发'},
+        {id: 2, user: '李四', content: '哈哈，沙发'},
+        {id: 3, user: '王五', content: '哈哈，沙发'},
+        {id: 4, user: '赵六', content: '哈哈，沙发'},
+        {id: 5, user: '田七', content: '哈哈，沙发'},
+      ]
+    }
+  }
+  render(){
+    return  <div>
+      
+---------------直接写bootstrap的类名------------------------------------------------------
+     <button className="btn btn-primary">按钮</button>
+---------------直接写bootstrap的类名------------------------------------------------------
+    
+    <h1 className={[ cssobj.title , "test" ].join(' ')}>这是评论列表内部</h1>
+    {this.state.CommentList.map(item => <CmtItem {...item} key={item.id}></CmtItem> )}
+  </div>
+  }
+}
+```
+
+- 到这里css文件解析就完成了
     
