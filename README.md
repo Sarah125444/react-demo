@@ -2035,3 +2035,219 @@ export default class Cmtlist extends React.Component{
 
 - 到这里css文件解析就完成了
     
+
+
+
+
+#### 1.react绑定机制
+
+- 传统的绑定方式为：
+
+  ```js
+  <button onclick="">按钮</button>
+  # 报错信息：
+  react-dom.development.js:558 Warning: Invalid event handler property `onclick`. Did you mean `onClick`?
+  分析：
+  报错信息的意思是onclick 应该为 onClick 
+  这样看来，react的事件绑定机制应该是有一套自己的事件处理函数的机制，
+  事件名应该是小驼峰命名
+  ```
+
+- 将onclick改为onClick 
+
+  ```js
+  <button onClick="">按钮</button>
+  
+  #报错信息：
+  Warning: Expected `onClick` listener to be a function, instead got a value of `string` type. 期望的onclick监听应该是个函数，而不是个字符串
+  ```
+
+- 将onclick改为一个函数
+
+  ```js
+  <button onClick={function(){console.log('ok')}}>按钮</button>
+  ```
+
+  
+
+##### 事件绑定语法
+
+- 经过上面的分析可以看出来，react的事件处理函数的格式必须要符合两点：
+
+  - 必须为驼峰式命名 ，类似`onClick` `onMouseOver`
+
+  - 表达式必须为一个函数 ，类似`onClick={function(){}}`
+
+    
+
+- 用的最多的事件绑定形式为：
+
+  ```jsx
+  <button onClick={ () => this.show('传参') }>按钮</button>
+  //事件处理函数，需要定义为一个箭头函数，然后赋值给 函数名称
+   show = (arg1) => {
+      console.log('show方法'+ arg1)
+    }
+  
+  show等于一个箭头函数，本来箭头函数就是一个匿名函数，我们是想在点击的时候触发onclick函数，能调用吗
+  (arg1) => {
+      console.log('show方法'+ arg1)
+    }
+  
+  本身这个箭头函数是个匿名函数，没有名字，那么我们也调用不了，所以要想将箭头函数抽离出来，就必须给箭头函数起一个名字，这样子箭头函数就变成一个具名函数了
+  先定义一个function，再将这个function 的引用赋值给这个 show的名字 ， 那个show 这个成员就指向这个箭头函数了，那么在触发点击事件的时候就能根据这个函数名来触发这个箭头函数了
+    
+  所以这种方法是最靠谱的：
+  1.先定义一个箭头函数，
+  2.在箭头函数里面写方法的调用
+  3.赋值给一个具体的函数名
+  ```
+
+##### 事件传参方式
+
+```js
+  <button onClick={() => this.show("🐖", "🏃")}>按钮</button>
+
+   show = (arg1, arg2) => {
+     console.log(this.state.msg + arg1 + arg2)
+  };
+```
+
+##### 修改状态值
+
+```js
+  <button onClick={() => this.show("🐖", "🏃")}>按钮</button>
+
+   show = (arg1, arg2) => {
+     this.setState({  #注意这里使用this.state.msg =  "123" + arg1 + arg2 是没有效果的 
+      msg: "123" + arg1 + arg2
+    });
+  };
+```
+
+##### setState异步执行
+
+```js
+show = (arg1, arg2) => {
+    this.setState({  
+      msg: "123" + arg1 + arg2
+    },function(){
+      console.log(this.state.msg)
+    });
+  
+console.log(this.state.msg)  =>这里打印出来的是之前的内容 不是最新的数据
+# 是因为this.setState是异步执行的，所以会先执行完同步的内容再执行异步的内容，如果是想想拿到最新的数据，使用callback函数异步调用，这样就可以拿到最新的数据
+```
+
+#### 2.实现双向绑定文本框的值
+
+默认情况下，在react中，如页面上的表单元素，绑定了state上的状态值，那么，每当state上的状态值变化，必然会自动把最新的状态值，自动同步到页面上   状态流 => 自动更新页面  这个叫做单向数据流 
+
+如果UI界面上，文本框的内容变化了，想要把最新的值，同步到state中去，此时，React没有这种自动同步机制
+
+##### 使用e.target.value同步
+
+1.在react中，需要程序员手动监听文本框的onChange事件，
+
+```js
+ <input type="text"  value={this.state.msg} onChange={(e)=> { this.textChanged(e)}}/> 
+```
+
+
+
+2.在onChange事件中，拿到最新的文本框的值
+
+```js
+# 使用e.target.value
+textChanged = (e) => {
+    // 在 onChange事件中，获取文本框的值有两种方案：
+    // 方案一：通过事件参数e来获取
+    console.log(e.target.value)
+  };
+```
+
+
+
+3.程序员调用this.setState{()}手动把最新的值同步到state中
+
+```js
+ textChanged = (e) => {
+    // console.log(this.refs.txt.value)
+    // 在react中获取文本框的方式有两种:一种是事件处理函数，一种是使用refs
+    const newVal = e.target.value
+    this.setState({
+      msg: newVal
+    })
+  };
+```
+
+
+
+##### 使用refs同步
+
+1.在react中，需要程序员手动监听文本框的onChange事件，
+
+```js
+ <input type="text"  value={this.state.msg} onChange={(e)=> { this.textChanged(e)}}/> 
+```
+
+2.在onChange事件中，拿到最新的文本框的值
+
+```js
+ <input 
+        type="text" 
+        style={{width: '100%'}} 
+        value={this.state.msg} 
+        onChange={(e)=> {this.textChanged(e)}} 
+        ref = 'txt'/ >   # 使用refs
+```
+
+3.程序员调用this.setState{()}手动把最新的值同步到state中
+
+```js
+textChanged = (e) => {
+    const newVal = this.refs.txt.value  #使用refs实现
+    this.setState({  
+      msg: newVal
+    })
+```
+
+#### 3.组件的生命周期函数
+
+##### 生命周期概念
+
+- 每个组件的实例，从**创建**、到**运行**、直到**销毁**，在这个过程中，会触发一系列的事件，这些个事件叫做组件的生命周期函数
+- 也就说，在玩游戏的过程中，生成英雄到英雄死亡的过程就叫生命周期
+- 生命周期函数就是英雄升级的过程，比如青铜，黄金，白银等这些关卡一样，在特定的阶段会触发特定的函数，这个就叫做生命周期函数
+
+##### 组件的生命周期
+
+- 组件的创建阶段： 特点：一辈子执行一次
+
+  ```ls
+  componentWillMount
+  render
+  componentDidMount
+  ```
+
+  
+
+- 组件运行阶段：按需，根据props属性或者state状态的改变，有选择的执行0次或者多次
+
+  ```js
+  componentWillReceiveProps
+  shouldComponentUpdata
+  componentWillUpdata
+  render
+  componentDidupdata
+  ```
+
+  
+
+- 组件销毁阶段：一辈子只执行一次
+
+  ```js
+  componentWillUnmount
+  ```
+
+  
