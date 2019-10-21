@@ -2212,22 +2212,19 @@ textChanged = (e) => {
     })
 ```
 
-#### 3.组件的生命周期函数
-
-##### 生命周期概念
-
-- 每个组件的实例，从**创建**、到**运行**、直到**销毁**，在这个过程中，会触发一系列的事件，这些个事件叫做组件的生命周期函数
-- 也就说，在玩游戏的过程中，生成英雄到英雄死亡的过程就叫生命周期
-- 生命周期函数就是英雄升级的过程，比如青铜，黄金，白银等这些关卡一样，在特定的阶段会触发特定的函数，这个就叫做生命周期函数
-
 ##### 组件的生命周期
 
 - 组件的创建阶段： 特点：一辈子执行一次
 
-  ```ls
-  componentWillMount
-  render
-  componentDidMount
+  ```js
+  static Props 初始化属性
+  this.state 初始化私有数据 这个会被第一时间执行 因为在构造器里面 只要new了实例，就会执行构造器里面的代码
+  
+  # mount的意思是挂载，挂载的意思是将虚拟DOM树 放到 页面上 去加载的过程
+  
+  componentWillMount 组件的虚拟DOM树将要被挂载 但是此时的虚拟DOM树没有被创建出来，没有挂载到页面
+  render 渲染 渲染虚拟DOM树 执行完render函数，虚拟DOM树就在内存中创建好了，但是，还没有挂载
+  componentDidMount 挂载组件 将内存中的虚拟DOM和数据挂载到页面上 组件显示到页面上 进入运行中状态
   ```
 
   
@@ -2235,11 +2232,14 @@ textChanged = (e) => {
 - 组件运行阶段：按需，根据props属性或者state状态的改变，有选择的执行0次或者多次
 
   ```js
-  componentWillReceiveProps
-  shouldComponentUpdata
-  componentWillUpdata
-  render
-  componentDidupdata
+  属性是否被修改： 如果修改就会执行 componentWillReceiveProps ，只要执行这个方法，就证明父组件向子组件							传递了新的属性
+  
+  							执行完上面的函数之后，就会和state状态发生改变一样，执行下面的函数
+                
+  shouldComponentUpdate  组件是否需要被更新 此时，组件尚未被更新，但是，state和props肯定是最新的 
+  componentWillUpdate 组件将要被更新，此时，尚未开始更新，内存中的虚拟DOM树还是旧的
+  render  重新渲染更新后的数据或者属性 根据最新的state和props重新渲染一颗内存中的虚拟DOM树，当render调用完毕，内存中的旧DOM树，已经被新的DOM树替换了，此时页面还是旧的
+  componentDidupdate 组件升级完毕 此时，页面又被重新渲染了，state和虚拟DOM和页面已经完全保持同步了
   ```
 
   
@@ -2247,7 +2247,10 @@ textChanged = (e) => {
 - 组件销毁阶段：一辈子只执行一次
 
   ```js
-  componentWillUnmount
+  componentWillUnmount  组件将要被销毁，此时组件还可以正常使用
   ```
+
+  
+
 
   
