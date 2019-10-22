@@ -2253,4 +2253,426 @@ textChanged = (e) => {
   
 
 
+  #### 1.react绑定机制
+
+- 传统的绑定方式为：
+
+  ```js
+  <button onclick="">按钮</button>
+  # 报错信息：
+  react-dom.development.js:558 Warning: Invalid event handler property `onclick`. Did you mean `onClick`?
+  分析：
+  报错信息的意思是onclick 应该为 onClick 
+  这样看来，react的事件绑定机制应该是有一套自己的事件处理函数的机制，
+  事件名应该是小驼峰命名
+  ```
+
+- 将onclick改为onClick 
+
+  ```js
+  <button onClick="">按钮</button>
   
+  #报错信息：
+  Warning: Expected `onClick` listener to be a function, instead got a value of `string` type. 期望的onclick监听应该是个函数，而不是个字符串
+  ```
+
+- 将onclick改为一个函数
+
+  ```js
+  <button onClick={function(){console.log('ok')}}>按钮</button>
+  ```
+
+  
+
+##### 事件绑定语法
+
+- 经过上面的分析可以看出来，react的事件处理函数的格式必须要符合两点：
+
+  - 必须为驼峰式命名 ，类似`onClick` `onMouseOver`
+
+  - 表达式必须为一个函数 ，类似`onClick={function(){}}`
+
+    
+
+- 用的最多的事件绑定形式为：
+
+  ```jsx
+  <button onClick={ () => this.show('传参') }>按钮</button>
+  //事件处理函数，需要定义为一个箭头函数，然后赋值给 函数名称
+   show = (arg1) => {
+      console.log('show方法'+ arg1)
+    }
+  
+  show等于一个箭头函数，本来箭头函数就是一个匿名函数，我们是想在点击的时候触发onclick函数，能调用吗
+  (arg1) => {
+      console.log('show方法'+ arg1)
+    }
+  
+  本身这个箭头函数是个匿名函数，没有名字，那么我们也调用不了，所以要想将箭头函数抽离出来，就必须给箭头函数起一个名字，这样子箭头函数就变成一个具名函数了
+  先定义一个function，再将这个function 的引用赋值给这个 show的名字 ， 那个show 这个成员就指向这个箭头函数了，那么在触发点击事件的时候就能根据这个函数名来触发这个箭头函数了
+    
+  所以这种方法是最靠谱的：
+  1.先定义一个箭头函数，
+  2.在箭头函数里面写方法的调用
+  3.赋值给一个具体的函数名
+  ```
+
+##### 事件传参方式
+
+```js
+  <button onClick={() => this.show("🐖", "🏃")}>按钮</button>
+
+   show = (arg1, arg2) => {
+     console.log(this.state.msg + arg1 + arg2)
+  };
+```
+
+##### 修改状态值
+
+```js
+  <button onClick={() => this.show("🐖", "🏃")}>按钮</button>
+
+   show = (arg1, arg2) => {
+     this.setState({  #注意这里使用this.state.msg =  "123" + arg1 + arg2 是没有效果的 
+      msg: "123" + arg1 + arg2
+    });
+  };
+```
+
+##### setState异步执行
+
+```js
+show = (arg1, arg2) => {
+    this.setState({  
+      msg: "123" + arg1 + arg2
+    },function(){
+      console.log(this.state.msg)
+    });
+  
+console.log(this.state.msg)  =>这里打印出来的是之前的内容 不是最新的数据
+# 是因为this.setState是异步执行的，所以会先执行完同步的内容再执行异步的内容，如果是想想拿到最新的数据，使用callback函数异步调用，这样就可以拿到最新的数据
+```
+
+#### 2.实现双向绑定文本框的值
+
+默认情况下，在react中，如页面上的表单元素，绑定了state上的状态值，那么，每当state上的状态值变化，必然会自动把最新的状态值，自动同步到页面上   状态流 => 自动更新页面  这个叫做单向数据流 
+
+如果UI界面上，文本框的内容变化了，想要把最新的值，同步到state中去，此时，React没有这种自动同步机制
+
+##### 使用e.target.value同步
+
+1.在react中，需要程序员手动监听文本框的onChange事件，
+
+```js
+ <input type="text"  value={this.state.msg} onChange={(e)=> { this.textChanged(e)}}/> 
+```
+
+
+
+2.在onChange事件中，拿到最新的文本框的值
+
+```js
+# 使用e.target.value
+textChanged = (e) => {
+    // 在 onChange事件中，获取文本框的值有两种方案：
+    // 方案一：通过事件参数e来获取
+    console.log(e.target.value)
+  };
+
+```
+
+
+
+3.程序员调用this.setState{()}手动把最新的值同步到state中
+
+```js
+ textChanged = (e) => {
+    // console.log(this.refs.txt.value)
+    // 在react中获取文本框的方式有两种:一种是事件处理函数，一种是使用refs
+    const newVal = e.target.value
+    this.setState({
+      msg: newVal
+    })
+  };
+
+```
+
+
+
+##### 使用refs同步
+
+1.在react中，需要程序员手动监听文本框的onChange事件，
+
+```js
+ <input type="text"  value={this.state.msg} onChange={(e)=> { this.textChanged(e)}}/> 
+
+```
+
+2.在onChange事件中，拿到最新的文本框的值
+
+```js
+ <input 
+        type="text" 
+        style={{width: '100%'}} 
+        value={this.state.msg} 
+        onChange={(e)=> {this.textChanged(e)}} 
+        ref = 'txt'/ >   # 使用refs
+
+```
+
+3.程序员调用this.setState{()}手动把最新的值同步到state中
+
+```js
+textChanged = (e) => {
+    const newVal = this.refs.txt.value  #使用refs实现
+    this.setState({  
+      msg: newVal
+    })
+
+```
+
+#### 3.在react绑定this并传参的几种方式
+
+##### 使用Bind函数修改this指向
+
+```jsx
+import React from 'react'
+
+export default class BindThis extends React.Component{
+  constructor(props){
+    super(props)
+    this.state = {
+      msg: '这是默认的msg'
+    }
+  } 
+
+  render(){
+    return <div>
+      <h1>绑定this并传参的几种方式</h1>
+
+{/* bind的作用：
+为前面的函数=> 修改函数内部的this指向 , 让函数内部的this=>指向bind参数列表中的第一个参数*/}
+    
+{/* bind / call / apply的区别：  
+    1.call和apply在修改完this指向后会立即调用,但是bind不会
+    2.bind只会修改this指向
+ */}
+<input type="button" value="绑定this并传参的几种方式" onClick={this.changeMsg1.bind(this)}/>
+      <hr/>
+      <h3>{this.state.msg}</h3>
+    </div>
+  }
+
+ changeMsg1(){
+  //  注意：这里的方式，是一个普通的方法，因此，在触发的时候，这里的this是undefined
+  //  console.log(this)  //undefined
+  this.setState({
+    msg: '绑定this并传参的几种方式'
+  })
+
+  console.log(this)  
+//绑定完this之后的this信息是这个类 
+
+//   BindThis {props: {…}, context: {…}, refs: {…}, updater: {…}, state: {…}, …}
+//     context: {}
+//     props: {}
+//     refs: {}
+//     state: {msg: "绑定this并传参的几种方式"}
+//     updater: {isMounted: ƒ, enqueueSetState: ƒ, enqueueReplaceState: ƒ, enqueueForceUpdate: ƒ}
+//     _reactInternalFiber: FiberNode {tag: 1, key: null, stateNode: BindThis, elementType: ƒ, type: ƒ, …}
+//     _reactInternalInstance: {_processChildContext: ƒ}
+//     isMounted: (...)
+//     replaceState: (...)
+//     __proto__: Component
+ }
+}
+
+```
+
+##### 使用Bind函数的第二三四五个参数
+
+```js
+export default class BindThis extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      msg: "这是默认的msg"
+    };
+  }
+
+  render() {
+    return (
+      <div>
+        <h1>绑定this并传参的几种方式</h1>
+{/* 注意：
+bind中的第一个参数，是用来修改this指向的，
+第一个参数后面的所有参数，都会当做将来调用 前面函数 时候的参数传递进来 */}
+        <input
+          type="button"
+          value="绑定this并传参的几种方式"
+          onClick={this.changeMsg1.bind(this , '这是第二个参数' , '这是第三个参数')}
+        />
+        <hr />
+        <h3>{this.state.msg}</h3>
+      </div>
+    );
+  }
+
+  changeMsg1(arg1,arg2) {
+    this.setState({
+      msg: "绑定this并传参的第一种方式" + arg1 + arg2
+    });
+  }
+}
+
+```
+
+##### 在类里面绑定this
+
+```js
+export default class BindThis extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      msg: "这是默认的msg"
+    }
+
+1.绑定this并传参的方式2：在构造函数中绑定this
+2.在这里绑定之后去调用参数还是会报错：Uncaught TypeError: Cannot read property 'setState' of undefined
+3.注意：当为一个函数，调用bind改变了this指向后，bind函数调用的结果，有一个返回值，这个值，就是被改变this指向后的函数的引用
+# 注意：bind不会修改原函数的this指向，如果想要修改，就是将bind函数的修改后的this指向重新赋值给旧的函数，赋值后的this就不指向原函数了
+    this.changeMsg2 = this.changeMsg2.bind(this,'💕','❤')   
+// 相对bind来说 changeMsg2这个是原函数 当调用完bind函数之后会返回一个新的函数指向 新函数的this变成当前实例 但是原来函数的this没有改变  如果不拿新的东西来接收这个bind函数返回的新的值 那么下面的changeMsg2的this还是等于undefined
+// 如果是在事件里面调bind，那么每次使用每次都要调用，但是如果是在全局函数里面调用，那么就只需要调用一次
+  }
+
+  render() {
+    return (
+      <div>
+        <h1>绑定this并传参的几种方式</h1>
+        <input
+          type="button"
+          value="绑定this并传参的方式二"
+          onClick={this.changeMsg2}
+        />
+        <hr />
+        <h3>{this.state.msg}</h3>
+      </div>
+    );
+  }
+
+  changeMsg2(arg1,arg2) {
+    console.log(this)  
+    //如果没有一个东西接收bind修改this之后的新函数 原来的函数还是原来的this并没有改变
+    //如果想要新的this数据绑定，就必须先接收bind绑定后的新函数的this指向，
+    this.setState({
+      msg: "绑定this并传参的第二种方式" + arg1 + arg2
+    });
+  }
+}
+```
+
+##### 使用箭头函数绑定this
+
+```js
+export default class BindThis extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      msg: "这是默认的msg"
+    }
+  }
+
+  render() {
+    return (
+      <div>
+        <h1>绑定this并传参的几种方式</h1>
+        <input
+          type="button"
+          value="绑定this并传参的方式三"
+          onClick={ () => { this.changeMsg3('😁' , '😭') }}
+        />
+
+
+{/* 箭头函数有个特质：箭头函数外部的this   () => { this.changeMsg3('😁' , '😭') } 和
+内部的this  this.changeMsg3('😁' , '😭') 要保持一致  会把外部的this 强制绑定到内部的this里面去 
+onclick这个函数里面的this是指向 BindThis 这个实例 , 所以箭头函数外部的this就是指向实例 所以内部也会是我们的实例  那既然是实例直接去调用了 那么函数内部的this就是指向我们的调用者 也就是我们的实例
+
+如果这里面不写箭头函数 而是直接 this.changeMsg3('😁' , '😭') 这个函数的调用 react解析到这行的时候 会直接将这个当做函数调用给提交解析掉  所以必须写一个匿名函数 这样子react会到需要调用的时候再解析
+
+*/}
+
+        <hr />
+        <h3>{this.state.msg}</h3>
+      </div>
+    );
+  }
+
+  changeMsg3(arg1,arg2) {
+    console.log(this)  
+ 
+    this.setState({
+      msg: "绑定this并传参的第三种方式" + arg1 + arg2
+    });
+  }
+}
+```
+
+##### 实现数据双向绑定
+
+```js
+export default class BindThis extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      msg: "这是默认的msg"
+    }
+  }
+
+  render() {
+    return (
+      <div>
+        <h1>绑定this并传参的几种方式</h1>
+        <input
+          type="button"
+          value="绑定this并传参的方式三"
+          onClick={ () => { this.changeMsg3('😁' , '😭') }}
+        />
+        <hr />
+        <h3>{this.state.msg}</h3>
+
+      {/* 在vue中，使用v-model中实现双向数据绑定 
+          在react中，使用onChange 实现双向数据绑定
+      */}
+      <input type="text" style={{width: "100%"}} value={this.state.msg} 
+      onChange={ (e) => this.textChanged(e)}/>
+
+      </div>
+    );
+  }
+
+  textChanged(e){
+    // console.log('ok')
+    // 如果想要 文本框在触发 onChange 的时候 ，同时把文本框最新的值保存到state中，那么，我们需要手动调用this.setState
+
+    // 货物文本框中最新文本的3种方式：
+    // 1.使用 document.getElementByID来拿
+    // 2.使用ref 来拿
+    // console.log(this.refs.txt.value)
+    // 3.使用事件对象的参数e来拿 e.target 就表示触发 这个事件的事件源对象 得到的是一个原生的JSDOM对象
+    // console.log(e.target.value) 
+    this.setState({
+      msg: e.target.value
+    })
+  }
+
+  changeMsg3(arg1,arg2) {
+    console.log(this)  
+    this.setState({
+      msg: "绑定this并传参的第三种方式" + arg1 + arg2
+    });
+  }
+}
+```
+
+
